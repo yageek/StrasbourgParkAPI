@@ -7,16 +7,6 @@
 //
 
 import Foundation
-import os
-
-private enum Endpoint: String {
-
-    case legacyStatus = "http://carto.strasmap.eu/remote.amf.json/Parking.geometry"
-    case legacyLocation = "http://carto.strasmap.eu/remote.amf.json/Parking.status"
-
-    case location = "https://data.strasbourg.eu/api/records/1.0/search/?dataset=parkings"
-    case status = "https://data.strasbourg.eu/api/records/1.0/search/?dataset=occupation-parkings-temps-reel"
-}
 
 private struct APIPagedCall {
     let endpoint: Endpoint
@@ -25,116 +15,6 @@ private struct APIPagedCall {
 
     fileprivate var apiURL: URL {
         return URL(string: "\(endpoint.rawValue)&start=\(start)&rows=\(count)")!
-    }
-}
-
-open class BaseOperation: Operation {
-
-    // MARK: - Helper Begin
-    var _isFinished: Bool = false
-    open override var isFinished: Bool {
-        set {
-            willChangeValue(forKey: "isFinished")
-            _isFinished = newValue
-            didChangeValue(forKey: "isFinished")
-        }
-
-        get {
-            return _isFinished
-        }
-    }
-
-    var _isExecuting: Bool = false
-
-    open override var isExecuting: Bool {
-        set {
-            willChangeValue(forKey: "isExecuting")
-            _isExecuting = newValue
-            didChangeValue(forKey: "isExecuting")
-        }
-
-        get {
-            return _isExecuting
-        }
-    }
-
-    open func finish() {
-        isExecuting = false
-        isFinished = true
-    }
-}
-
-private final class DownloadOperation<T: Decodable>: BaseOperation {
-    private let url: URL
-    private let completion: (Result<T, APIClientError>) -> Void
-    private let session: URLSession
-
-    private var currentTask: URLSessionTask?
-
-    func finish(result: Result<T, APIClientError>) {
-        self.completion(result)
-        self.finish()
-    }
-
-    // MARK: - Implementation
-
-    init(session: URLSession, url: URL, completion: @escaping(Result<T, APIClientError>) -> Void) {
-        self.url = url
-        self.completion = completion
-        self.session = session
-
-        super.init()
-        name = "ch.yageek.strasbourg.park.downloadoperation.\(T.self)"
-    }
-
-    convenience init(session: URLSession, endpoint: Endpoint, completion:  @escaping(Result<T, APIClientError>) -> Void) {
-        self.init(session: session, url: URL(string: endpoint.rawValue)!, completion: completion)
-    }
-
-    override var isAsynchronous: Bool {
-        return true
-    }
-
-    override func start() {
-        isExecuting = true
-
-        guard !isCancelled else { finish(); return }
-        os_log(.debug, "Starting request to %s", url.absoluteString)
-
-        let task = session.dataTask(with: url) { [weak self] (data, response, error) in
-            guard let sSelf = self else { return }
-
-            guard !sSelf.isCancelled else { sSelf.finish(); return }
-            self?.parseResponse(data: data, response: response as? HTTPURLResponse, error: error)
-        }
-
-        self.currentTask = task
-        task.resume()
-    }
-
-    override func cancel() {
-        self.currentTask?.cancel()
-        self.finish()
-    }
-
-    // MARK: - Helpers
-    private func parseResponse(data: Data?, response: HTTPURLResponse?, error: Error?) {
-
-        if let error = error {
-            os_log(.error, "Error on the network: %s", error.localizedDescription)
-            self.finish(result: .failure(.network(error)))
-        } else if let data = data {
-
-            do {
-                let decoded = try JSONDecoder().decode(T.self, from: data)
-                os_log("Successfully decoded value")
-                self.finish(result: .success(decoded))
-
-            } catch let error {
-                os_log(.error, "Error during decoding response: %s", error.localizedDescription)
-                self.finish(result: .failure(.decodable(error)))
-            }
-        }
     }
 }
 
@@ -216,7 +96,7 @@ private final class DownloadAllPages<T: Decodable>: BaseOperation {
                 sSelf.workingQueue.addOperations(ops, waitUntilFinished: false)
 
             } catch let error {
-                os_log(.error, "Error during the download: %s", error.localizedDescription)
+                logger.error("Error during the download: \(error.localizedDescription)")
                 self?.finish()
             }
         }
@@ -243,7 +123,7 @@ private final class DownloadAllPages<T: Decodable>: BaseOperation {
             self.records.append(contentsOf: elements)
 
         } catch let error {
-            os_log(.error, "Error downloading data: %s", error.localizedDescription)
+            logger.error("Error downloading data: \(error.localizedDescription)")
             self.errors.append(error)
             workingQueue.cancelAllOperations()
         }
