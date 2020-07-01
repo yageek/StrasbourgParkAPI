@@ -1,9 +1,8 @@
 //
-//  APIClient.swift
-//  ParkAPI
+//  File.swift
+//  
 //
-//  Created by Yannick Heinrich on 03.04.19.
-//  Copyright © 2019 Yageek. All rights reserved.
+//  Created by Yannick Heinrich on 01.07.20.
 //
 
 import Foundation
@@ -18,12 +17,7 @@ private struct APIPagedCall {
     }
 }
 
-public enum APIClientError: Error {
-    case network(Error)
-    case decodable(Error)
-}
-
-private final class DownloadAllPages<T: Decodable>: BaseOperation {
+final class DownloadAllPages<T: Decodable>: BaseOperation {
 
     private let workingQueue: OperationQueue
     private let endpoint: Endpoint
@@ -110,7 +104,7 @@ private final class DownloadAllPages<T: Decodable>: BaseOperation {
     }
 
     // MARK: - Completions
-    private func otherCompletion(result: Result<OpenDataResponse<T>, APIClientError>) {
+    private func otherCompletion(result: Result<OpenDataResponse<T>, ParkingAPIClientError>) {
 
         lock.lock()
         defer {
@@ -127,73 +121,5 @@ private final class DownloadAllPages<T: Decodable>: BaseOperation {
             self.errors.append(error)
             workingQueue.cancelAllOperations()
         }
-    }
-}
-
-public protocol CancelableRequest {
-    func cancel()
-}
-
-extension Operation: CancelableRequest { }
-
-/// An APIClient to query
-/// data from the server
-public final class APIClient: NSObject, URLSessionDelegate {
-
-    private var session: URLSession!
-    private let workingQueue: OperationQueue
-
-    public init(configuration: URLSessionConfiguration = .default) {
-
-        let queue = OperationQueue()
-        queue.qualityOfService = .background
-        queue.name = "net.yageek.strasbourgpark.apiclient"
-        self.workingQueue = queue
-
-        super.init()
-        self.session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
-    }
-
-    // MARK: URLSessionTaskDelegate
-    public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-
-        // This i
-        #if DEBUG
-        guard let trust = challenge.protectionSpace.serverTrust else {
-            completionHandler(.rejectProtectionSpace, nil)
-            return
-        }
-        let credential = URLCredential(trust: trust)
-        completionHandler(.useCredential, credential)
-        #else
-        completionHandler(.performDefaultHandling, challenge.proposedCredential)
-        #endif
-    }
-
-    // MARK: - Legacy APIs
-    @discardableResult public func getLegacyLocation(completion: @escaping(Result<LocationResponse, APIClientError>) -> Void) -> CancelableRequest {
-        let op = DownloadOperation(session: self.session, endpoint: .legacyLocation, completion: completion)
-        workingQueue.addOperation(op)
-        return op
-    }
-
-   @discardableResult public func getLegacyStatus(completion: @escaping(Result<StatusResponse, APIClientError>) -> Void) -> CancelableRequest {
-        let op = DownloadOperation(session: self.session, endpoint: .legacyLocation, completion: completion)
-        workingQueue.addOperation(op)
-        return op
-    }
-
-    // MARK: - Open Data APIS
-    @discardableResult public func getLocations(completion: @escaping(Result<[LocationOpenData], Error>) -> Void) -> CancelableRequest {
-        let op = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: 10, completionHandler: completion)
-        workingQueue.addOperation(op)
-        return op
-    }
-
-    // MARK: - Open Data APIS
-    @discardableResult public func getStatus(completion: @escaping(Result<[StatusOpenData], Error>) -> Void) -> CancelableRequest {
-        let op = DownloadAllPages<StatusOpenData>(session: self.session, endpoint: .status, pageSize: 10, completionHandler: completion)
-        workingQueue.addOperation(op)
-        return op
     }
 }

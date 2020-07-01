@@ -84,23 +84,38 @@ struct OpenDataResponse<T: Decodable>: Decodable {
     }
 }
 
+/// The location of the parking
 public struct LocationOpenData: Decodable {
 
+    ///:nodoc:
     public let id: String
+    ///:nodoc:
     public let city: String
+    ///:nodoc:
     public let zipCode: String
+    ///:nodoc:
     public let street: String
+    ///:nodoc:
     public let address: String
+    ///:nodoc:
     public let location: CLLocation
 
+    ///:nodoc:
     public let url: URL
+    ///:nodoc:
     public let name: String
+    ///:nodoc:
     public let description: String?
 
+    ///:nodoc:
     public let deafAccess: Bool
+    ///:nodoc:
     public let deficientAccess: Bool
+    ///:nodoc:
     public let elderAccess: Bool
+    ///:nodoc:
     public let wheelChairAccess: Bool
+    ///:nodoc:
     public let blindAccess: Bool
 
     private enum DecodingError: Error {
@@ -171,12 +186,20 @@ public struct LocationOpenData: Decodable {
     }
 }
 
+/// The status of the parking
 public struct StatusOpenData: Decodable {
+
+    ///:nodoc:
     public let id: String
+    ///:nodoc:
     public let name: String
+    ///:nodoc:
     public let etat: Bool
+    ///:nodoc:
     public let free: UInt
+    ///:nodoc:
     public let total: UInt
+    ///:nodoc:
     public let description: String
 
     private enum Keys: String, CodingKey {

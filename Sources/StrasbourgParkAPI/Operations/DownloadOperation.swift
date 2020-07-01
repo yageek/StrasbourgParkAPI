@@ -9,19 +9,19 @@ import Foundation
 
 final class DownloadOperation<T: Decodable>: BaseOperation {
     private let url: URL
-    private let completion: (Result<T, APIClientError>) -> Void
+    private let completion: (Result<T, ParkingAPIClientError>) -> Void
     private let session: URLSession
 
     private var currentTask: URLSessionTask?
 
-    func finish(result: Result<T, APIClientError>) {
+    func finish(result: Result<T, ParkingAPIClientError>) {
         self.completion(result)
         self.finish()
     }
 
     // MARK: - Implementation
 
-    init(session: URLSession, url: URL, completion: @escaping(Result<T, APIClientError>) -> Void) {
+    init(session: URLSession, url: URL, completion: @escaping(Result<T, ParkingAPIClientError>) -> Void) {
         self.url = url
         self.completion = completion
         self.session = session
@@ -30,7 +30,7 @@ final class DownloadOperation<T: Decodable>: BaseOperation {
         name = "ch.yageek.strasbourg.park.downloadoperation.\(T.self)"
     }
 
-    convenience init(session: URLSession, endpoint: Endpoint, completion:  @escaping(Result<T, APIClientError>) -> Void) {
+    convenience init(session: URLSession, endpoint: Endpoint, completion:  @escaping(Result<T, ParkingAPIClientError>) -> Void) {
         self.init(session: session, url: URL(string: endpoint.rawValue)!, completion: completion)
     }
 

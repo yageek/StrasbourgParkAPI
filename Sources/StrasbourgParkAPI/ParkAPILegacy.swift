@@ -56,17 +56,17 @@ public struct ParkingLocation: Decodable {
 
     // MARK: - Manager ID management
     /// A society managing parking
-    ///
-    /// - cts: The CTS
-    /// - vinci: Vinci parking
-    /// - parcus: Parcus
-    /// - unknown: Unkown societry with the provided names
     public enum Manager: RawRepresentable {
+        /// Managed by the CTS
         case cts
+        /// Managed by Vinci
         case vinci
+        /// Managed by Parcus
         case parcus
+        /// Managed by unknown provider
         case unknown(String)
 
+        ///:nodoc:
         public init(rawValue: String) {
             switch rawValue {
             case "CTS":
@@ -80,6 +80,7 @@ public struct ParkingLocation: Decodable {
             }
         }
 
+        ///:nodoc:
         public var rawValue: String {
             switch self {
             case .cts:
@@ -132,6 +133,7 @@ public struct ParkingLocation: Decodable {
 
     private static let ExpectedLang: [String] = ["fr", "de", "en"]
 
+    ///:nodoc:
     public init(from decoder: Decoder) throws {
 
         let container = try decoder.container(keyedBy: Keys.self)
@@ -157,16 +159,33 @@ public struct ParkingLocation: Decodable {
     }
 }
 
+/// The state of the parking
 public struct ParkingState: Decodable {
 
+    /// The id of the parking
     public let id: String
+
+    /// The number of free places
     public let free: UInt
+
+    /// The total numer of places
     public let total: UInt
+
+    /// The status of the paking
     public let status: Status
 
+    /// The status of the parking
     public enum Status {
-        case open, full, notAvailable, closed
+        /// The parking is opened
+        case open
+        /// The parking is fuill
+        case full
+        /// Status is not available
+        case notAvailable
+        /// Pakring is closed
+        case closed
 
+        
         init(stringServerValue val: String) {
             switch val {
             case "status_1":
@@ -194,6 +213,7 @@ public struct ParkingState: Decodable {
         case status = "ds"
     }
 
+    ///:nodoc:
     public init(from decoder: Decoder) throws {
 
         let container = try decoder.container(keyedBy: Keys.self)
@@ -219,9 +239,12 @@ public struct ParkingState: Decodable {
     }
 }
 
+/// The status response
 public struct StatusResponse: Decodable {
 
+    /// The state of the parking
     let states: [ParkingState]
+    /// The date of when the data are available
     let date: Date
 
     private enum DecodingError: Error {
@@ -233,6 +256,7 @@ public struct StatusResponse: Decodable {
         case date = "datatime"
     }
 
+    ///:nodoc:
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: ContainerKeys.self)
         // States

@@ -7,11 +7,11 @@
 
 import Foundation
 
-open class BaseOperation: Operation {
+class BaseOperation: Operation {
 
     // MARK: - Helper Begin
     var _isFinished: Bool = false
-    open override var isFinished: Bool {
+    override var isFinished: Bool {
         set {
             willChangeValue(forKey: "isFinished")
             _isFinished = newValue
@@ -25,7 +25,7 @@ open class BaseOperation: Operation {
 
     var _isExecuting: Bool = false
 
-    open override var isExecuting: Bool {
+    override var isExecuting: Bool {
         set {
             willChangeValue(forKey: "isExecuting")
             _isExecuting = newValue
@@ -37,10 +37,18 @@ open class BaseOperation: Operation {
         }
     }
 
-    open func finish() {
+    func finish() {
         isExecuting = false
         isFinished = true
     }
 }
 
+/// A protocol representing something that can be cancelled
+public protocol CancelableRequest {
+    /// Cancel the current request
+    func cancel()
+}
+
+/// :nodoc:
+extension Operation: CancelableRequest { }
 

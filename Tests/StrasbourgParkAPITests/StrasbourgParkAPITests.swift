@@ -86,7 +86,7 @@ final class StrasbourgParkAPITests: XCTestCase {
     }
 
     func testCall() {
-        let client = APIClient()
+        let client = ParkingAPIClient()
 
         let exp = expectation(description: "Download pages")
 
