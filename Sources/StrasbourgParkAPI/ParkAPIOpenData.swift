@@ -201,6 +201,8 @@ public struct StatusOpenData: Decodable {
     public let total: UInt
     ///:nodoc:
     public let description: String
+    ///:nodoc:
+    public let usersInfo: String?
 
     private enum Keys: String, CodingKey {
         case id = "idsurfs"
@@ -209,6 +211,7 @@ public struct StatusOpenData: Decodable {
         case free = "libre"
         case total = "total"
         case description = "etat_descriptif"
+        case usersInfo = "infousager"
     }
 
     public init(from decoder: Decoder) throws {
@@ -220,7 +223,7 @@ public struct StatusOpenData: Decodable {
         self.free = try container.decode(UInt.self, forKey: .free)
         self.total = try container.decode(UInt.self, forKey: .total)
         self.description = try container.decode(String.self, forKey: .description)
-
         self.etat = try container.decode(Int.self, forKey: .etat)
+        self.usersInfo = try container.decodeIfPresent(String.self, forKey: .usersInfo)
     }
 }
