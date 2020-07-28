@@ -12,6 +12,8 @@ import Combine
 @available(iOS 13.0, macOS 10.15, *)
 extension ParkingAPIClient {
 
+    /// FRP version of `getLocation`
+    /// - Returns: A `Future` with `[StrasbourgParkAPI.LocationOpenData]` as content
     public func getLocation() -> Future<[StrasbourgParkAPI.LocationOpenData], Error> {
         return Future { [unowned self] result in
             self.getLocations { (r) in
@@ -19,7 +21,9 @@ extension ParkingAPIClient {
             }
         }
     }
-
+    
+    /// FRP version of `getStatus`
+    /// - Returns: A `Future` with `[StrasbourgParkAPI.StatusOpenData]` as content
     public func getStatus() -> Future<[StrasbourgParkAPI.StatusOpenData], Error> {
         return Future { [unowned self] o in
             self.getStatus { (result) in
