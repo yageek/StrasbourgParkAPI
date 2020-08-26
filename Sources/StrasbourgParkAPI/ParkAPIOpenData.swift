@@ -28,16 +28,16 @@ struct Record<T: Decodable>: Decodable {
 
 struct OpenDataResponse<T: Decodable>: Decodable {
 
-    let total: UInt
+    let total: Int
     let timeZone: TimeZone
-    let count: UInt
-    let start: UInt
+    let count: Int
+    let start: Int
     let records: [Record<T>]
 
     private struct Parameters: Decodable {
         let timeZone: TimeZone
-        let start: UInt
-        let count: UInt
+        let start: Int
+        let count: Int
 
         private enum DecodingError: Error {
             case invalidTimeZoneID(String)
@@ -52,8 +52,8 @@ struct OpenDataResponse<T: Decodable>: Decodable {
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: Keys.self)
 
-            self.count = try container.decode(UInt.self, forKey: .count)
-            self.start = try container.decodeIfPresent(UInt.self, forKey: .start) ?? 0
+            self.count = try container.decode(Int.self, forKey: .count)
+            self.start = try container.decodeIfPresent(Int.self, forKey: .start) ?? 0
 
             let zoneName = try container.decode(String.self, forKey: .timeZone)
             guard let zone = TimeZone(identifier: zoneName) else { throw DecodingError.invalidTimeZoneID(zoneName) }
@@ -73,7 +73,7 @@ struct OpenDataResponse<T: Decodable>: Decodable {
         let container = try decoder.container(keyedBy: Keys.self)
 
         // Total
-        self.total = try container.decode(UInt.self, forKey: .total)
+        self.total = try container.decode(Int.self, forKey: .total)
 
         // Inner parameters
         let parameters = try container.decode(Parameters.self, forKey: .parameters)

@@ -65,9 +65,9 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
 
                 // Compute pages to download
                 let rest = resp.total - resp.count
-                let pagesToDownload = rest / sSelf.pageSize + ((rest % sSelf.pageSize == 0) ? 0 : 1)
+                let pagesToDownload = rest < 0 ? 0 : UInt(rest) / sSelf.pageSize + ((UInt(rest) % sSelf.pageSize == 0) ? 0 : 1)
                 var indexes = (1..<pagesToDownload).map { (sSelf.pageSize*$0, sSelf.pageSize) }
-                indexes.append((sSelf.pageSize*pagesToDownload, rest % sSelf.pageSize))
+                indexes.append((sSelf.pageSize*pagesToDownload, UInt(rest) % sSelf.pageSize))
 
                 // Operations
                 let calls = indexes.map { APIPagedCall(endpoint: sSelf.endpoint, start: $0.0, count: $0.1) }
