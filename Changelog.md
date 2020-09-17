@@ -1,3 +1,7 @@
+# 2.0.2
+- Better asynchronous handling
+- Fix completion when a network error occurs
+
 # 2.0.1
 - Fix crash when some weird data received
 
