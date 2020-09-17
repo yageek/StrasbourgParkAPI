@@ -24,7 +24,7 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
     private let session: URLSession
     private let pageSize: UInt
     private let completionHandler: (Result<[T], Error>) -> Void
-    private var records: [T]
+    private var records: [Int: [T]]
     private var errors: [Error]
 
     private var lock: NSLock
@@ -41,7 +41,7 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
         queue.qualityOfService = .background
         self.workingQueue = queue
 
-        self.records = []
+        self.records = [:]
         self.errors = []
         super.init()
         name = "net.yageek.strasbourgpark.apiclient.downloadallrecords.\(T.self)"
@@ -55,30 +55,39 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
         let call = APIPagedCall(endpoint: self.endpoint, start: 0, count: pageSize)
 
         let op = DownloadOperation<OpenDataResponse<T>>(session: self.session, url: call.apiURL) { [weak self] (result) in
-            guard let sSelf = self else { return }
+            guard let self = self else { return }
 
-            guard !sSelf.isCancelled else { sSelf.finish(); return }
+            guard !self.isCancelled else { self.finish(); return }
             // Read the value
             do {
                 let resp = try result.get()
-                sSelf.records.append(contentsOf: resp.records.map { $0.inner })
+                self.records[0] = resp.records.map { $0.inner }
 
                 // Compute pages to download
                 let rest = resp.total - resp.count
-                let pagesToDownload = rest < 0 ? 0 : UInt(rest) / sSelf.pageSize + ((UInt(rest) % sSelf.pageSize == 0) ? 0 : 1)
-                var indexes = (1..<pagesToDownload).map { (sSelf.pageSize*$0, sSelf.pageSize) }
-                indexes.append((sSelf.pageSize*pagesToDownload, UInt(rest) % sSelf.pageSize))
+                let pagesToDownload = rest < 0 ? 0 : UInt(rest) / self.pageSize + ((UInt(rest) % self.pageSize == 0) ? 0 : 1)
+                var indexes = (1..<pagesToDownload).map { (self.pageSize*$0, self.pageSize) }
+                indexes.append((self.pageSize*pagesToDownload, UInt(rest) % self.pageSize))
 
                 // Operations
-                let calls = indexes.map { APIPagedCall(endpoint: sSelf.endpoint, start: $0.0, count: $0.1) }
-                let ops = calls.map { DownloadOperation<OpenDataResponse<T>>(session: sSelf.session, url: $0.apiURL, completion: sSelf.otherCompletion)}
+                let calls = indexes.map { APIPagedCall(endpoint: self.endpoint, start: $0.0, count: $0.1) }
+
+                var ops: [Operation] = []
+                for (i, op) in calls.enumerated() {
+
+                    let op = DownloadOperation<OpenDataResponse<T>>(session: self.session, url: op.apiURL) { [unowned self] result in
+                        self.otherCompletion(pageNumber: i, result: result)
+                    }
+                    ops.append(op)
+                }
 
                 // Let final operations
                 let blockOp = BlockOperation {
-                    if sSelf.errors.isEmpty {
-                        sSelf.completionHandler(.success(sSelf.records))
+                    if self.errors.isEmpty {
+                        let result: [T] = self.records.sorted(by: { $0.0 > $1.0 }).reduce(into: [T](), { $0.append(contentsOf: $1.value) })
+                        self.completionHandler(.success(result))
                     } else {
-                        sSelf.completionHandler(.failure(sSelf.errors[0]))
+                        self.completionHandler(.failure(self.errors[0]))
                     }
                 }
 
@@ -86,12 +95,13 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
                     blockOp.addDependency(op)
                 }
 
-                sSelf.workingQueue.addOperation(blockOp)
-                sSelf.workingQueue.addOperations(ops, waitUntilFinished: false)
+                self.workingQueue.addOperation(blockOp)
+                self.workingQueue.addOperations(ops, waitUntilFinished: false)
 
             } catch let error {
                 logger.error("Error during the download: \(error.localizedDescription)")
-                self?.finish()
+                self.completionHandler(.failure(error))
+                self.finish()
             }
         }
 
@@ -104,7 +114,7 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
     }
 
     // MARK: - Completions
-    private func otherCompletion(result: Result<OpenDataResponse<T>, ParkingAPIClientError>) {
+    private func otherCompletion(pageNumber: Int, result: Result<OpenDataResponse<T>, ParkingAPIClientError>) {
 
         lock.lock()
         defer {
@@ -114,7 +124,7 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
         do {
             let resp = try result.get()
             let elements = resp.records.map { $0.inner }
-            self.records.append(contentsOf: elements)
+            self.records[pageNumber] = elements
 
         } catch let error {
             logger.error("Error downloading data: \(error.localizedDescription)")
