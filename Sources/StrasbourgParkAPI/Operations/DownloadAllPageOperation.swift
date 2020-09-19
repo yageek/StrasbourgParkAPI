@@ -75,8 +75,9 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
                 var ops: [Operation] = []
                 for (i, op) in calls.enumerated() {
 
+                    // i + 1 because the first page is already set
                     let op = DownloadOperation<OpenDataResponse<T>>(session: self.session, url: op.apiURL) { [unowned self] result in
-                        self.otherCompletion(pageNumber: i, result: result)
+                        self.otherCompletion(pageNumber: i + 1, result: result)
                     }
                     ops.append(op)
                 }

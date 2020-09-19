@@ -1,3 +1,6 @@
+# 2.0.3
+- Fix pagination error #1
+
 # 2.0.2
 - Better asynchronous handling
 - Fix completion when a network error occurs
