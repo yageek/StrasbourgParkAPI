@@ -61,11 +61,20 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
             // Read the value
             do {
                 let resp = try result.get()
-                self.records[0] = resp.records.map { $0.inner }
+                let firstPage = resp.records.map { $0.inner }
+                self.records[0] = firstPage
 
                 // Compute pages to download
                 let rest = resp.total - resp.count
-                let pagesToDownload = rest < 0 ? 0 : UInt(rest) / self.pageSize + ((UInt(rest) % self.pageSize == 0) ? 0 : 1)
+                guard rest > 0 else {
+                    self.completionHandler(.success(firstPage))
+                    self.finish()
+                    return
+                }
+
+                let r = UInt(rest) % self.pageSize
+                let pagesToDownload =  UInt(rest) / self.pageSize + min(1, r)
+
                 var indexes = (1..<pagesToDownload).map { (self.pageSize*$0, self.pageSize) }
                 indexes.append((self.pageSize*pagesToDownload, UInt(rest) % self.pageSize))
 
