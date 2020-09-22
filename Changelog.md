@@ -1,3 +1,6 @@
+# 2.0.4
+- Add possibility to specify the page size when downloading data
+
 # 2.0.3
 - Fix pagination error #1
 

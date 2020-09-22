@@ -22,15 +22,18 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
 
     private var session: URLSession!
     private let workingQueue: OperationQueue
+    private let pageSize: UInt
 
     /// Default initializer
-    /// - Parameter configuration: The `URLSessionConfiguration` to use
-    public init(configuration: URLSessionConfiguration = .default) {
+    /// - Parameter configuration: The `URLSessionConfiguration` to use. Default to `URLSession.default`
+    /// - Parameter pageSize: The pagination value to use. Default to `10`.
+    public init(configuration: URLSessionConfiguration = .default ,pageSize: UInt = 10) {
 
         let queue = OperationQueue()
         queue.qualityOfService = .background
         queue.name = "net.yageek.strasbourgpark.apiclient"
         self.workingQueue = queue
+        self.pageSize = pageSize
 
         super.init()
         self.session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
@@ -78,7 +81,7 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
     /// - Parameter completion: The result when the request completed
     /// - Returns: A `CancelableRequest` compatible element
     @discardableResult public func getLocations(completion: @escaping(Result<[LocationOpenData], Error>) -> Void) -> CancelableRequest {
-        let op = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: 10, completionHandler: completion)
+        let op = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: self.pageSize, completionHandler: completion)
         workingQueue.addOperation(op)
         return op
     }
@@ -88,7 +91,7 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
     /// - Parameter completion: The result when the request completed
     /// - Returns: A `CancelableRequest` compatible element
     @discardableResult public func getStatus(completion: @escaping(Result<[StatusOpenData], Error>) -> Void) -> CancelableRequest {
-        let op = DownloadAllPages<StatusOpenData>(session: self.session, endpoint: .status, pageSize: 10, completionHandler: completion)
+        let op = DownloadAllPages<StatusOpenData>(session: self.session, endpoint: .status, pageSize: self.pageSize, completionHandler: completion)
         workingQueue.addOperation(op)
         return op
     }
