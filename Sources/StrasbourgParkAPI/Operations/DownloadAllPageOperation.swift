@@ -109,7 +109,7 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
                 self.workingQueue.addOperations(ops, waitUntilFinished: false)
 
             } catch let error {
-                logger.error("Error during the download: \(error.localizedDescription)")
+                logger.error("Error during the download: \(error)")
                 self.completionHandler(.failure(error))
                 self.finish()
             }
@@ -137,7 +137,7 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
             self.records[pageNumber] = elements
 
         } catch let error {
-            logger.error("Error downloading data: \(error.localizedDescription)")
+            logger.error("Error downloading data: \(error)")
             self.errors.append(error)
             workingQueue.cancelAllOperations()
         }

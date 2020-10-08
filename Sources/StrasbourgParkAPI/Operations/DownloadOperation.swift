@@ -64,7 +64,7 @@ final class DownloadOperation<T: Decodable>: BaseOperation {
     private func parseResponse(data: Data?, response: HTTPURLResponse?, error: Error?) {
 
         if let error = error {
-            logger.error("Error on the network: \(error.localizedDescription)")
+            logger.error("Error on the network: \(error)")
             self.finish(result: .failure(.network(error)))
         } else if let data = data {
 
@@ -74,7 +74,7 @@ final class DownloadOperation<T: Decodable>: BaseOperation {
                 self.finish(result: .success(decoded))
 
             } catch let error {
-                logger.error("Error during decoding response: \(error.localizedDescription)")
+                logger.error("Error during decoding response: \(error)")
                 self.finish(result: .failure(.decodable(error)))
             }
         }

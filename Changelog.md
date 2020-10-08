@@ -1,3 +1,6 @@
+# 3.0.0
+- Try to deal with non constant API JSON objects
+
 # 2.0.4
 - Add possibility to specify the page size when downloading data
 

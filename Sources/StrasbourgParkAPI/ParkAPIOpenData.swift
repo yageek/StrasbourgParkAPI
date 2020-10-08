@@ -186,6 +186,29 @@ public struct LocationOpenData: Decodable {
     }
 }
 
+
+/// An either enum to handle to possibility of deserialisation
+public enum Either<L, R>: Decodable where L: Decodable, R: Decodable {
+    ///:nodoc:
+    case left(L)
+    ///:nodoc:
+    case right(R)
+
+    ///:nodoc:
+    public init(from decoder: Decoder) throws {
+
+        let container = try decoder.singleValueContainer()
+        if let left = try? container.decode(L.self) {
+            self = .left(left)
+        } else if let right = try? container.decode(R.self) {
+            self = .right(right)
+        } else {
+            let context = DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Cannot decode \(L.self) or \(R.self)")
+            throw DecodingError.dataCorrupted(context)
+        }
+    }
+}
+
 /// The status of the parking
 public struct StatusOpenData: Decodable {
 
@@ -202,7 +225,7 @@ public struct StatusOpenData: Decodable {
     ///:nodoc:
     public let description: String
     ///:nodoc:
-    public let usersInfo: String?
+    public let usersInfo: Either<String, Int>
 
     private enum Keys: String, CodingKey {
         case id = "idsurfs"
@@ -224,6 +247,6 @@ public struct StatusOpenData: Decodable {
         self.total = try container.decode(UInt.self, forKey: .total)
         self.description = try container.decode(String.self, forKey: .description)
         self.etat = try container.decode(Int.self, forKey: .etat)
-        self.usersInfo = try container.decodeIfPresent(String.self, forKey: .usersInfo)
+        self.usersInfo = try container.decode(Either<String, Int>.self, forKey: .usersInfo)
     }
 }

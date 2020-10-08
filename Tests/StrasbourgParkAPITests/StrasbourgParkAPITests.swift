@@ -100,7 +100,7 @@ final class StrasbourgParkAPITests: XCTestCase {
                 let resp = try result.get()
                 print("Resp: \(resp)")
             } catch let error {
-                XCTFail(error.localizedDescription)
+                XCTFail("\(error)")
             }
         }
 
