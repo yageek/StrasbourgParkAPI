@@ -225,7 +225,7 @@ public struct StatusOpenData: Decodable {
     ///:nodoc:
     public let description: String
     ///:nodoc:
-    public let usersInfo: Either<String, Int>
+    public let usersInfo: Either<String, Int>?
 
     private enum Keys: String, CodingKey {
         case id = "idsurfs"

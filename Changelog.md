@@ -1,3 +1,6 @@
+# 3.0.1
+- Try to deal with non constant API JSON objects
+
 # 3.0.0
 - Try to deal with non constant API JSON objects
 
