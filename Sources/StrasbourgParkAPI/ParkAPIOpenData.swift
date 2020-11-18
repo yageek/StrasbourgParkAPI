@@ -247,6 +247,6 @@ public struct StatusOpenData: Decodable {
         self.total = try container.decode(UInt.self, forKey: .total)
         self.description = try container.decode(String.self, forKey: .description)
         self.etat = try container.decode(Int.self, forKey: .etat)
-        self.usersInfo = try container.decode(Either<String, Int>.self, forKey: .usersInfo)
+        self.usersInfo = try container.decodeIfPresent(Either<String, Int>.self, forKey: .usersInfo)
     }
 }
