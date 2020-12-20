@@ -85,6 +85,13 @@ final class StrasbourgParkAPITests: XCTestCase {
         }
     }
 
+    func testBadPayload() {
+        let data = try! Data(contentsOf: jsonMock("status_error"))
+        var response: OpenDataResponse<StatusOpenData>!
+        XCTAssertNoThrow(response = try JSONDecoder().decode(OpenDataResponse<StatusOpenData>.self, from: data))
+        XCTAssertEqual(response.records.count, 29)
+    }
+
     func testCall() {
         let client = ParkingAPIClient()
 

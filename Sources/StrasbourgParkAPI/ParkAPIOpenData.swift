@@ -9,6 +9,15 @@
 import Foundation
 import CoreLocation
 
+@propertyWrapper struct FailableDecodable<T: Decodable>: Decodable {
+    let wrappedValue: T?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.wrappedValue = try? container.decode(T.self)
+    }
+}
+
 struct Record<T: Decodable>: Decodable {
     let id: String
     let inner: T
@@ -80,7 +89,8 @@ struct OpenDataResponse<T: Decodable>: Decodable {
         self.count = parameters.count
         self.start = parameters.start
         self.timeZone = parameters.timeZone
-        self.records = try container.decode([Record<T>].self, forKey: .records)
+        let records = try container.decode([FailableDecodable<Record<T>>].self, forKey: .records)
+        self.records = records.compactMap { $0.wrappedValue }
     }
 }
 
