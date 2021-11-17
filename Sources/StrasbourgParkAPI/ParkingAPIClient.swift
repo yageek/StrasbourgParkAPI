@@ -20,6 +20,15 @@ public enum ParkingAPIClientError: Error {
     case decodable(Error)
 }
 
+
+@available(iOS 15.0.0, *)
+actor OperationContext {
+    private(set) var operation: Operation?
+    func attach(_ operation: Operation?) {
+        self.operation = operation
+    }
+}
+
 /// An http client to query
 /// data from the server
 public final class ParkingAPIClient: NSObject, URLSessionDelegate {
@@ -91,7 +100,7 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
     @available(iOS 15.0.0, *)
     func fetchLegacyLocation() async throws -> LocationResponse {
         // See: SE-0300 https://github.com/apple/swift-evolution/blob/main/proposals/0300-continuation.md
-        var op: Operation?
+        let ctx = OperationContext()
 
         return try await withTaskCancellationHandler {
             let response: LocationResponse = try await withUnsafeThrowingContinuation { continuation in
@@ -103,10 +112,17 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
                         continuation.resume(throwing: error)
                     }
                 })
+
+                Task {
+                    await ctx.attach(dlOp)
+                }
             }
+            
             return response
         } onCancel: {
-            op?.cancel()
+            Task {
+                await ctx.operation?.cancel()
+            }
         }
     }
 
@@ -139,22 +155,28 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         return op
     }
     
-//    @available(macOS 12.5, iOS 15.0, *)
-//    func fetchLocations() async throws -> [StrasbourgParkAPI.LocationOpenData] {
-//        var op: Operation?
-//        return try await withTaskCancellationHandler {
-//            op?.cancel()
-//        } operation: {
-//            let result: [StrasbourgParkAPI.LocationOpenData] = try await withCheckedThrowingContinuation { continuation in
-//
-//                let dlOp = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: self.pageSize) { result in
-//                    continuation.resume(with: result)
-//                }
-//                op = dlOp
-//                workingQueue.addOperation(dlOp)
-//            }
-//
-//            return result
-//        }
-//    }
+    @available(macOS 12.5, iOS 15.0, *)
+    func fetchLocations() async throws -> [StrasbourgParkAPI.LocationOpenData] {
+        let ctx = OperationContext()
+        return try await withTaskCancellationHandler {
+            Task {
+                await ctx.operation?.cancel()
+            }
+
+        } operation: {
+            let result: [StrasbourgParkAPI.LocationOpenData] = try await withCheckedThrowingContinuation { continuation in
+
+                let dlOp = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: self.pageSize) { result in
+                    continuation.resume(with: result)
+                }
+                Task {
+                    await ctx.attach(dlOp)
+                }
+
+                workingQueue.addOperation(dlOp)
+            }
+
+            return result
+        }
+    }
 }
