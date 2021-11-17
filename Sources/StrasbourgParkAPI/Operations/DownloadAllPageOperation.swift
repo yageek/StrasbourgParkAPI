@@ -23,19 +23,37 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
     private let endpoint: Endpoint
     private let session: URLSession
     private let pageSize: UInt
-    private let completionHandler: (Result<[T], Error>) -> Void
+
+    private var _handlerLock = NSLock()
+    private var _completionHandler: ((Result<[T], Error>) -> Void)? = nil
+    var completionHandler: ((Result<[T], Error>) -> Void)? {
+        get {
+            _handlerLock.lock()
+            defer {
+                _handlerLock.unlock()
+            }
+            return _completionHandler
+        }
+        set {
+            _handlerLock.lock()
+            defer {
+                _handlerLock.unlock()
+            }
+            _completionHandler = newValue
+        }
+    }
     private var records: [Int: [T]]
     private var errors: [Error]
 
-    private var lock: NSLock
+    private var lockResponse: NSLock
 
-    init(session: URLSession, endpoint: Endpoint, pageSize: UInt, completionHandler:  @escaping (Result<[T], Error>) -> Void) {
+    init(session: URLSession, endpoint: Endpoint, pageSize: UInt, completionHandler: ((Result<[T], Error>) -> Void)? = nil) {
         self.session = session
         self.endpoint = endpoint
         self.pageSize = pageSize
 
-        self.lock = NSLock()
-        self.completionHandler = completionHandler
+        self.lockResponse = NSLock()
+        self._completionHandler = completionHandler
 
         let queue = OperationQueue()
         queue.qualityOfService = .background
@@ -67,7 +85,7 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
                 // Compute pages to download
                 let rest = resp.total - resp.count
                 guard rest > 0 else {
-                    self.completionHandler(.success(firstPage))
+                    self.completionHandler?(.success(firstPage))
                     self.finish()
                     return
                 }
@@ -95,9 +113,9 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
                 let blockOp = BlockOperation {
                     if self.errors.isEmpty {
                         let result: [T] = self.records.sorted(by: { $0.0 > $1.0 }).reduce(into: [T](), { $0.append(contentsOf: $1.value) })
-                        self.completionHandler(.success(result))
+                        self.completionHandler?(.success(result))
                     } else {
-                        self.completionHandler(.failure(self.errors[0]))
+                        self.completionHandler?(.failure(self.errors[0]))
                     }
                 }
 
@@ -110,7 +128,7 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
 
             } catch let error {
                 logger.error("Error during the download: \(error)")
-                self.completionHandler(.failure(error))
+                self.completionHandler?(.failure(error))
                 self.finish()
             }
         }
@@ -126,9 +144,9 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
     // MARK: - Completions
     private func otherCompletion(pageNumber: Int, result: Result<OpenDataResponse<T>, ParkingAPIClientError>) {
 
-        lock.lock()
+        lockResponse.lock()
         defer {
-            lock.unlock()
+            lockResponse.unlock()
         }
 
         do {

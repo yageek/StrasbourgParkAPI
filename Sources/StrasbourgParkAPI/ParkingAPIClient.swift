@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if canImport(Combine)
+    import Combine
+#endif
+
 /// The returned error type
 public enum ParkingAPIClientError: Error {
     /// An error due  tp the network
@@ -27,7 +31,7 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
     /// Default initializer
     /// - Parameter configuration: The `URLSessionConfiguration` to use. Default to `URLSession.default`
     /// - Parameter pageSize: The pagination value to use. Default to `10`.
-    public init(configuration: URLSessionConfiguration = .default ,pageSize: UInt = 10) {
+    public init(configuration: URLSessionConfiguration = .default, pageSize: UInt = 10) {
 
         let queue = OperationQueue()
         queue.qualityOfService = .background
@@ -67,6 +71,45 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         return op
     }
 
+    @available(iOS 13.0, *)
+    /// Retrieve the parkings' locations with the legacy endpoints
+    /// - Returns: One ``AnyPublisher`` returning the response
+    public func getLegacyLocationPublisher() -> AnyPublisher<LocationResponse, ParkingAPIClientError> {
+        let op = DownloadOperation<LocationResponse>(session: self.session, endpoint: .legacyLocation)
+
+        return Deferred {
+            return Future { obs in
+                op.completion = { result in
+                    obs(result)
+                }
+            }
+        }.handleEvents(receiveCancel: {
+            op.cancel()
+        }).eraseToAnyPublisher()
+    }
+
+    @available(iOS 15.0.0, *)
+    func fetchLegacyLocation() async throws -> LocationResponse {
+        // See: SE-0300 https://github.com/apple/swift-evolution/blob/main/proposals/0300-continuation.md
+        var op: Operation?
+
+        return try await withTaskCancellationHandler {
+            let response: LocationResponse = try await withUnsafeThrowingContinuation { continuation in
+                let dlOp = DownloadOperation<LocationResponse>(session: self.session, endpoint: .legacyLocation, completion: { result in
+                    switch result {
+                    case .success(let success):
+                        continuation.resume(returning: success)
+                    case .failure(let error):
+                        continuation.resume(throwing: error)
+                    }
+                })
+            }
+            return response
+        } onCancel: {
+            op?.cancel()
+        }
+    }
+
     /// Retreive the parkings' with the legacy API
     /// - Parameter completion: The result when the request completed
     /// - Returns: A `CancelableRequest` compatible element
@@ -95,4 +138,23 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         workingQueue.addOperation(op)
         return op
     }
+    
+//    @available(macOS 12.5, iOS 15.0, *)
+//    func fetchLocations() async throws -> [StrasbourgParkAPI.LocationOpenData] {
+//        var op: Operation?
+//        return try await withTaskCancellationHandler {
+//            op?.cancel()
+//        } operation: {
+//            let result: [StrasbourgParkAPI.LocationOpenData] = try await withCheckedThrowingContinuation { continuation in
+//
+//                let dlOp = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: self.pageSize) { result in
+//                    continuation.resume(with: result)
+//                }
+//                op = dlOp
+//                workingQueue.addOperation(dlOp)
+//            }
+//
+//            return result
+//        }
+//    }
 }
