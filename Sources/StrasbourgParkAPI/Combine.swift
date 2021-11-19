@@ -14,7 +14,7 @@ extension ParkingAPIClient {
 
     /// FRP version of `getLocation`
     /// - Returns: A `Future` with `[StrasbourgParkAPI.LocationOpenData]` as content
-    public func getLocation() -> Future<[StrasbourgParkAPI.LocationOpenData], Error> {
+    public func getLocation() -> Future<[StrasbourgParkAPI.LocationOpenData], ParkingAPIClientError> {
         return Future { [unowned self] result in
             self.getLocations { (r) in
                 return result(r)
@@ -24,7 +24,7 @@ extension ParkingAPIClient {
     
     /// FRP version of `getStatus`
     /// - Returns: A `Future` with `[StrasbourgParkAPI.StatusOpenData]` as content
-    public func getStatus() -> Future<[StrasbourgParkAPI.StatusOpenData], Error> {
+    public func getStatus() -> Future<[StrasbourgParkAPI.StatusOpenData], ParkingAPIClientError> {
         return Future { [unowned self] o in
             self.getStatus { (result) in
                 return o(result)

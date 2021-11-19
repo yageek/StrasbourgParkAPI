@@ -25,8 +25,8 @@ final class DownloadAllPages<T: Decodable>: BaseOperation, CompletableOperation 
     private let pageSize: UInt
 
     private var _handlerLock = NSLock()
-    private var _completionHandler: ((Result<[T], Error>) -> Void)? = nil
-    var completionHandler: ((Result<[T], Error>) -> Void)? {
+    private var _completionHandler: ((Result<[T], ParkingAPIClientError>) -> Void)? = nil
+    var completionHandler: ((Result<[T], ParkingAPIClientError>) -> Void)? {
         get {
             _handlerLock.lock()
             defer {
@@ -43,11 +43,11 @@ final class DownloadAllPages<T: Decodable>: BaseOperation, CompletableOperation 
         }
     }
     private var records: [Int: [T]]
-    private var errors: [Error]
+    private var errors: [ParkingAPIClientError]
 
     private var lockResponse: NSLock
 
-    init(session: URLSession, endpoint: Endpoint, pageSize: UInt, completionHandler: ((Result<[T], Error>) -> Void)? = nil) {
+    init(session: URLSession, endpoint: Endpoint, pageSize: UInt, completionHandler: ((Result<[T], ParkingAPIClientError>) -> Void)? = nil) {
         self.session = session
         self.endpoint = endpoint
         self.pageSize = pageSize
@@ -126,9 +126,13 @@ final class DownloadAllPages<T: Decodable>: BaseOperation, CompletableOperation 
                 self.workingQueue.addOperation(blockOp)
                 self.workingQueue.addOperations(ops, waitUntilFinished: false)
 
-            } catch let error {
+            } catch let error as ParkingAPIClientError {
                 logger.error("Error during the download: \(error)")
                 self.completionHandler?(.failure(error))
+                self.finish()
+            } catch let error  {
+                logger.error("Error during the download: \(error)")
+                self.completionHandler?(.failure(.generic(error)))
                 self.finish()
             }
         }
@@ -154,9 +158,13 @@ final class DownloadAllPages<T: Decodable>: BaseOperation, CompletableOperation 
             let elements = resp.records.map { $0.inner }
             self.records[pageNumber] = elements
 
-        } catch let error {
+        } catch let error as ParkingAPIClientError {
             logger.error("Error downloading data: \(error)")
             self.errors.append(error)
+            workingQueue.cancelAllOperations()
+        } catch let error {
+            logger.error("Error downloading data: \(error)")
+            self.errors.append(.generic(error))
             workingQueue.cancelAllOperations()
         }
     }

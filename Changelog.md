@@ -1,3 +1,8 @@
+# 4.0.0
+- Add Combine API methods
+- Add Swift async methods
+- Use `ParkingAPIClient` error failure type everywhere for more cohesion
+
 # 3.0.2
 - Try to deal with non constant API JSON objects #2
 
