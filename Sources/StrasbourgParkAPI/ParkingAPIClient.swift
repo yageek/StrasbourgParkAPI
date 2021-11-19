@@ -132,6 +132,7 @@ extension Publishers {
                 switch result {
                 case .success(let ok):
                     _ = self.subscriber.receive(ok)
+                    self.subscriber.receive(completion: .finished)
                 case .failure(let failure):
                     self.subscriber.receive(completion: .failure(failure))
                 }

@@ -11,7 +11,6 @@ import XCTest
 
 final class StrasbourgParkAPITests: XCTestCase {
 
-
     func jsonMock(_ name: String) -> URL {
         return Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "samples")!
     }
@@ -136,6 +135,7 @@ final class StrasbourgParkAPITests: XCTestCase {
             exp.fulfill()
         } receiveValue: { result in
             print("Response: \(result)")
+
         }
 
         wait(for: [exp], timeout: 10.0)
