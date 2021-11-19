@@ -7,11 +7,11 @@
 
 import Foundation
 
-final class DownloadOperation<T: Decodable>: BaseOperation {
+final class DownloadOperation<T: Decodable>: BaseOperation, CompletableOperation {
     private let url: URL
     private let lock = NSLock()
     private var _completion: ((Result<T, ParkingAPIClientError>) -> Void)?
-    var completion: ((Result<T, ParkingAPIClientError>) -> Void)? {
+    var completionHandler: ((Result<T, ParkingAPIClientError>) -> Void)? {
         get {
             lock.lock()
             defer { lock.unlock() }
@@ -28,7 +28,7 @@ final class DownloadOperation<T: Decodable>: BaseOperation {
     private var currentTask: URLSessionTask?
 
     func finish(result: Result<T, ParkingAPIClientError>) {
-        self.completion?(result)
+        self.completionHandler?(result)
         self.finish()
     }
 

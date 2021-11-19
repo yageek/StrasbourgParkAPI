@@ -114,12 +114,12 @@ final class StrasbourgParkAPITests: XCTestCase {
         wait(for: [exp], timeout: 10.0)
     }
 
-    @available(iOS 15.0.0, *)
+    @available(iOS 15.0.0, macOS 12.0.0, *)
     func testCallAsync() async {
         let client = ParkingAPIClient()
 
         do {
-            let response = try  await client.fetchLocations()
+            let response = try await client.fetchLocations()
             print("Response: \(response)")
         } catch let error {
             print("Error: \(error)")

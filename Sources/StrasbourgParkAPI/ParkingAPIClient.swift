@@ -8,25 +8,12 @@
 
 import Foundation
 
-#if canImport(Combine)
-    import Combine
-#endif
-
 /// The returned error type
 public enum ParkingAPIClientError: Error {
     /// An error due  tp the network
     case network(Error)
     /// An error due to decoding error
     case decodable(Error)
-}
-
-
-@available(iOS 15.0.0, *)
-actor OperationContext {
-    private(set) var operation: Operation?
-    func attach(_ operation: Operation?) {
-        self.operation = operation
-    }
 }
 
 /// An http client to query
@@ -80,52 +67,6 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         return op
     }
 
-    @available(iOS 13.0, *)
-    /// Retrieve the parkings' locations with the legacy endpoints
-    /// - Returns: One ``AnyPublisher`` returning the response
-    public func getLegacyLocationPublisher() -> AnyPublisher<LocationResponse, ParkingAPIClientError> {
-        let op = DownloadOperation<LocationResponse>(session: self.session, endpoint: .legacyLocation)
-
-        return Deferred {
-            return Future { obs in
-                op.completion = { result in
-                    obs(result)
-                }
-            }
-        }.handleEvents(receiveCancel: {
-            op.cancel()
-        }).eraseToAnyPublisher()
-    }
-
-    @available(iOS 15.0.0, *)
-    func fetchLegacyLocation() async throws -> LocationResponse {
-        // See: SE-0300 https://github.com/apple/swift-evolution/blob/main/proposals/0300-continuation.md
-        let ctx = OperationContext()
-
-        return try await withTaskCancellationHandler {
-            let response: LocationResponse = try await withUnsafeThrowingContinuation { continuation in
-                let dlOp = DownloadOperation<LocationResponse>(session: self.session, endpoint: .legacyLocation, completion: { result in
-                    switch result {
-                    case .success(let success):
-                        continuation.resume(returning: success)
-                    case .failure(let error):
-                        continuation.resume(throwing: error)
-                    }
-                })
-
-                Task {
-                    await ctx.attach(dlOp)
-                }
-            }
-            
-            return response
-        } onCancel: {
-            Task {
-                await ctx.operation?.cancel()
-            }
-        }
-    }
-
     /// Retreive the parkings' with the legacy API
     /// - Parameter completion: The result when the request completed
     /// - Returns: A `CancelableRequest` compatible element
@@ -154,29 +95,167 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         workingQueue.addOperation(op)
         return op
     }
-    
-    @available(macOS 12.5, iOS 15.0, *)
-    func fetchLocations() async throws -> [StrasbourgParkAPI.LocationOpenData] {
-        let ctx = OperationContext()
-        return try await withTaskCancellationHandler {
-            Task {
-                await ctx.operation?.cancel()
+}
+
+// MARK: - Combine
+#if canImport(Combine)
+    import Combine
+#endif
+
+@available(iOS 13.0, macOS 10.15, *)
+extension Publishers {
+
+    private final class ParkingClientSubscription<S: Subscriber, Op: CompletableOperation>: Subscription where Op.Success == S.Input, Op.Failure == S.Failure {
+
+        private let subscriber: S
+        private var operation: Op
+        private let queue: OperationQueue
+
+        init(subscriber: S, operation: Op, queue: OperationQueue) {
+            self.subscriber = subscriber
+            self.operation = operation
+            self.queue = queue
+        }
+
+        func request(_ demand: Subscribers.Demand) {
+            guard !self.operation.isFinished else {
+                self.subscriber.receive(completion: .finished)
+                return
             }
 
-        } operation: {
-            let result: [StrasbourgParkAPI.LocationOpenData] = try await withCheckedThrowingContinuation { continuation in
+            guard !self.operation.isCancelled else {
+                self.subscriber.receive(completion: .finished)
+                return
+            }
 
-                let dlOp = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: self.pageSize) { result in
+            operation.completionHandler = { result in
+                switch result {
+                case .success(let ok):
+                    _ = self.subscriber.receive(ok)
+                case .failure(let failure):
+                    self.subscriber.receive(completion: .failure(failure))
+                }
+            }
+
+            self.queue.addOperation(operation)
+
+        }
+
+        func cancel() {
+            self.operation.cancel()
+        }
+    }
+
+    struct ParkingPublisher<Op: CompletableOperation>: Publisher {
+        typealias Output = Op.Success
+        typealias Failure = Op.Failure
+
+        private let queue: OperationQueue
+        private let operation: Op
+
+        init(operation: Op, queue: OperationQueue) {
+            self.queue = queue
+            self.operation = operation
+        }
+
+        func receive<S>(subscriber: S) where S : Subscriber, Op.Failure == S.Failure, Op.Success == S.Input {
+            let subscription = ParkingClientSubscription(subscriber: subscriber, operation: self.operation, queue: self.queue)
+            subscriber.receive(subscription: subscription)
+        }
+    }
+}
+
+@available(iOS 13.0, macOS 10.15, *)
+extension ParkingAPIClient {
+    
+    /// Retrieve the parkings' locations with the legacy endpoints
+    /// - Returns: A ``AnyPublisher`` instance providing legacy ``LocationResponse`` element.
+    public func getLegacyLocationPublisher() -> AnyPublisher<LocationResponse, ParkingAPIClientError> {
+        let op = DownloadOperation<LocationResponse>(session: self.session, endpoint: .legacyLocation)
+        return Publishers.ParkingPublisher(operation: op, queue: self.workingQueue).eraseToAnyPublisher()
+    }
+
+    /// Retreive the parkings' statuses with the legacy API
+    /// - Returns: A ``AnyPublisher`` instance providing legacy ``StatusResponse`` element.
+    public func getLegacyStatusPublisher() -> AnyPublisher<StatusResponse, ParkingAPIClientError> {
+        let op = DownloadOperation<StatusResponse>(session: self.session, endpoint: .legacyLocation)
+        return Publishers.ParkingPublisher(operation: op, queue: self.workingQueue).eraseToAnyPublisher()
+    }
+
+    // MARK: - Open Data APIS
+    /// Retrieve the parkings' locations
+    /// - Parameter completion: The result when the request completed
+    /// - Returns: A ``AnyPublisher`` instance providing legacy ``[LocationOpenData]`` element.
+    public func getLocationsPublisher() -> AnyPublisher<[LocationOpenData], Error> {
+        let op = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: self.pageSize)
+        return Publishers.ParkingPublisher(operation: op, queue: self.workingQueue).eraseToAnyPublisher()
+    }
+
+    // MARK: - Open Data APIS
+    /// Retreive the parkings' with the legacy API
+    /// - Parameter completion: The result when the request completed
+    /// - Returns: A ``AnyPublisher`` instance providing legacy ``[StatusOpenData]`` element.
+    public func getStatusPublisher() -> AnyPublisher<[StatusOpenData], Error> {
+        let op = DownloadAllPages<StatusOpenData>(session: self.session, endpoint: .status, pageSize: self.pageSize)
+        return Publishers.ParkingPublisher(operation: op, queue: self.workingQueue).eraseToAnyPublisher()
+    }
+}
+
+// MARK: - Async
+@available(iOS 15.0.0, macOS 12.0.0, *)
+/// A compatible async context that managed
+/// internally the sendable protocol
+struct OperationContext: @unchecked Sendable {
+
+    private var lock = NSLock()
+    private var _operation: Operation?
+
+    var operation: Operation? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _operation
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _operation = newValue
+        }
+    }
+}
+
+
+@available(macOS 12.0.0, iOS 15.0, *)
+extension ParkingAPIClient {
+
+    func executeOperation<O: CompletableOperation>(_ operation: O) async throws -> O.Success {
+        var ctx = OperationContext()
+        return try await withTaskCancellationHandler {
+            let result: O.Success = try await withCheckedThrowingContinuation { continuation in
+
+                operation.completionHandler = { result in
                     continuation.resume(with: result)
                 }
-                Task {
-                    await ctx.attach(dlOp)
-                }
-
-                workingQueue.addOperation(dlOp)
+                self.workingQueue.addOperation(operation)
+                ctx.operation = operation
             }
-
             return result
+        } onCancel: { [ctx] in
+            ctx.operation?.cancel()
         }
+    }
+
+    /// Retrieve all the locations of parkings
+    /// - Returns: An array of `StrasbourgParkAPI.LocationOpenData`
+    public func fetchLocations() async throws -> [StrasbourgParkAPI.LocationOpenData] {
+        let dlOp = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: self.pageSize)
+        return try await self.executeOperation(dlOp)
+    }
+
+    /// Retrieve the legacy locations
+    /// - Returns: An array of ``LocationResponse``
+    public func fetchLegacyLocation() async throws -> LocationResponse {
+        let dlOp = DownloadOperation<LocationResponse>(session: self.session, endpoint: .legacyLocation)
+        return try await self.executeOperation(dlOp)
     }
 }

@@ -17,7 +17,7 @@ private struct APIPagedCall {
     }
 }
 
-final class DownloadAllPages<T: Decodable>: BaseOperation {
+final class DownloadAllPages<T: Decodable>: BaseOperation, CompletableOperation {
 
     private let workingQueue: OperationQueue
     private let endpoint: Endpoint
@@ -161,3 +161,4 @@ final class DownloadAllPages<T: Decodable>: BaseOperation {
         }
     }
 }
+
