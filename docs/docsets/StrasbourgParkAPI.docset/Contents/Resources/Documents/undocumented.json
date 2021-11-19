@@ -1,19 +1,6 @@
 {
   "warnings": [
-    {
-      "file": "/Users/eidd5180/Developer/github/StrasbourgParkAPI/Sources/StrasbourgParkAPI/ParkingAPIClient.swift",
-      "line": 256,
-      "symbol": "ParkingAPIClient.fetchLegacyStatus()",
-      "symbol_kind": "source.lang.swift.decl.function.method.instance",
-      "warning": "undocumented"
-    },
-    {
-      "file": "/Users/eidd5180/Developer/github/StrasbourgParkAPI/Sources/StrasbourgParkAPI/ParkingAPIClient.swift",
-      "line": 262,
-      "symbol": "ParkingAPIClient.fetchStatus()",
-      "symbol_kind": "source.lang.swift.decl.function.method.instance",
-      "warning": "undocumented"
-    }
+
   ],
   "source_directory": "/Users/eidd5180/Developer/github/StrasbourgParkAPI"
 }

@@ -26,6 +26,8 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
     private let workingQueue: OperationQueue
     private let pageSize: UInt
 
+    // MARK: - Initialization
+
     /// Default initializer
     /// - Parameter configuration: The `URLSessionConfiguration` to use. Default to `URLSession.default`
     /// - Parameter pageSize: The pagination value to use. Default to `10`.
@@ -57,8 +59,7 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         #endif
     }
 
-    // MARK: - Legacy APIs
-
+    // MARK: - Callback closures APIs
     /// Retrieve the parkings' locations with the legacy API
     /// - Parameter completion: The result when the request completed
     /// - Returns: A `CancelableRequest` compatible element
@@ -77,7 +78,6 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         return op
     }
 
-    // MARK: - Open Data APIS
     /// Retrieve the parkings' locations with the open data API
     /// - Parameter completion: The result when the request completed
     /// - Returns: A `CancelableRequest` compatible element
@@ -87,7 +87,6 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         return op
     }
 
-    // MARK: - Open Data APIS
     /// Retrieve the parkings' status with the open data API
     /// - Parameter completion: The result when the request completed
     /// - Returns: A `CancelableRequest` compatible element
@@ -98,7 +97,7 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
     }
 }
 
-// MARK: - Combine
+// MARK: - Combine APIs
 #if canImport(Combine)
     import Combine
 #endif
@@ -184,7 +183,6 @@ extension ParkingAPIClient {
         return Publishers.ParkingPublisher(operation: op, queue: self.workingQueue).eraseToAnyPublisher()
     }
 
-    // MARK: - Open Data APIS
     /// Retrieve the parkings' locations using the open data API
     /// - Returns: A ``AnyPublisher`` answering one ``[LocationOpenData]`` .
     public func getLocationsPublisher() -> AnyPublisher<[LocationOpenData], ParkingAPIClientError> {
@@ -192,7 +190,6 @@ extension ParkingAPIClient {
         return Publishers.ParkingPublisher(operation: op, queue: self.workingQueue).eraseToAnyPublisher()
     }
 
-    // MARK: - Open Data APIS
     /// Retrieve the parkings' statuses with the opendata API
     /// - Returns: A ``AnyPublisher`` answering one ``[StatusOpenData]`` element.
     public func getStatusPublisher() -> AnyPublisher<[StatusOpenData], ParkingAPIClientError> {
@@ -201,7 +198,7 @@ extension ParkingAPIClient {
     }
 }
 
-// MARK: - Async
+// MARK: - Async APIs
 @available(iOS 15.0.0, macOS 12.0.0, *)
 /// A compatible async context that managed
 /// internally the sendable protocol
@@ -257,8 +254,6 @@ extension ParkingAPIClient {
         let op = DownloadOperation<StatusResponse>(session: self.session, endpoint: .legacyLocation)
         return try await self.executeOperation(op)
     }
-
-    // MARK: - Open Data APIS
 
     /// Retrieve the parkings' location with the open data API
     /// - Returns: An array of ``LocationOpenData``
