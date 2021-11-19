@@ -7,30 +7,42 @@
 
 import Foundation
 
-final class DownloadOperation<T: Decodable>: BaseOperation {
+final class DownloadOperation<T: Decodable>: BaseOperation, CompletableOperation {
     private let url: URL
-    private let completion: (Result<T, ParkingAPIClientError>) -> Void
+    private let lock = NSLock()
+    private var _completion: ((Result<T, ParkingAPIClientError>) -> Void)?
+    var completionHandler: ((Result<T, ParkingAPIClientError>) -> Void)? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _completion
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _completion = newValue
+        }
+    }
     private let session: URLSession
 
     private var currentTask: URLSessionTask?
 
     func finish(result: Result<T, ParkingAPIClientError>) {
-        self.completion(result)
+        self.completionHandler?(result)
         self.finish()
     }
 
     // MARK: - Implementation
-
-    init(session: URLSession, url: URL, completion: @escaping(Result<T, ParkingAPIClientError>) -> Void) {
+    init(session: URLSession, url: URL, completion: ((Result<T, ParkingAPIClientError>) -> Void)? = nil) {
         self.url = url
-        self.completion = completion
+        self._completion = completion
         self.session = session
 
         super.init()
         name = "ch.yageek.strasbourg.park.downloadoperation.\(T.self)"
     }
 
-    convenience init(session: URLSession, endpoint: Endpoint, completion:  @escaping(Result<T, ParkingAPIClientError>) -> Void) {
+    convenience init(session: URLSession, endpoint: Endpoint, completion: ((Result<T, ParkingAPIClientError>) -> Void)? = nil) {
         self.init(session: session, url: URL(string: endpoint.rawValue)!, completion: completion)
     }
 

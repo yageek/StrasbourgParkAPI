@@ -11,7 +11,6 @@ import XCTest
 
 final class StrasbourgParkAPITests: XCTestCase {
 
-
     func jsonMock(_ name: String) -> URL {
         return Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "samples")!
     }
@@ -112,6 +111,35 @@ final class StrasbourgParkAPITests: XCTestCase {
         }
 
         wait(for: [exp], timeout: 10.0)
+    }
+
+    @available(iOS 15.0.0, macOS 12.0.0, *)
+    func testCallAsync() async {
+        let client = ParkingAPIClient()
+
+        do {
+            let response = try await client.fetchLocations()
+            print("Response: \(response)")
+        } catch let error {
+            print("Error: \(error)")
+        }
+    }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    func testCombine() {
+        let client = ParkingAPIClient()
+
+        let exp = XCTestExpectation(description: "should download elements properly")
+
+        let handle = client.getLocationsPublisher().sink { result in
+            exp.fulfill()
+        } receiveValue: { result in
+            print("Response: \(result)")
+
+        }
+
+        wait(for: [exp], timeout: 10.0)
+        handle.cancel()
     }
 
     static var allTests = [

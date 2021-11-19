@@ -7,6 +7,13 @@
 
 import Foundation
 
+protocol CompletableOperation: Operation {
+    associatedtype Success
+    associatedtype Failure: Error    
+    func cancel()
+    var completionHandler: ((Result<Success, Failure>) -> Void)? { get set }
+}
+
 class BaseOperation: Operation {
 
     // MARK: - Helper Begin
