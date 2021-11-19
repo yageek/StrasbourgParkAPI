@@ -245,17 +245,28 @@ extension ParkingAPIClient {
         }
     }
 
+
+    /// Retrieve the legacy locations
+    public func fetchLegacyLocation() async throws -> LocationResponse {
+        let dlOp = DownloadOperation<LocationResponse>(session: self.session, endpoint: .legacyLocation)
+        return try await self.executeOperation(dlOp)
+    }
+
+    public func fetchLegacyStatus() async throws -> StatusResponse {
+        let op = DownloadOperation<StatusResponse>(session: self.session, endpoint: .legacyLocation)
+        return try await self.executeOperation(op)
+    }
+
+    // MARK: - Open Data APIS
+    public func fetchStatus() async throws -> [StatusOpenData] {
+        let op = DownloadAllPages<StatusOpenData>(session: self.session, endpoint: .status, pageSize: self.pageSize)
+        return try await self.executeOperation(op)
+    }
+
     /// Retrieve all the locations of parkings
     /// - Returns: An array of `StrasbourgParkAPI.LocationOpenData`
     public func fetchLocations() async throws -> [StrasbourgParkAPI.LocationOpenData] {
         let dlOp = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: self.pageSize)
-        return try await self.executeOperation(dlOp)
-    }
-
-    /// Retrieve the legacy locations
-    /// - Returns: An array of ``LocationResponse``
-    public func fetchLegacyLocation() async throws -> LocationResponse {
-        let dlOp = DownloadOperation<LocationResponse>(session: self.session, endpoint: .legacyLocation)
         return try await self.executeOperation(dlOp)
     }
 }

@@ -124,8 +124,24 @@ final class StrasbourgParkAPITests: XCTestCase {
         } catch let error {
             print("Error: \(error)")
         }
-
     }
+
+    @available(iOS 13.0, macOS 10.15, *)
+    func testCombine() {
+        let client = ParkingAPIClient()
+
+        let exp = XCTestExpectation(description: "should download elements properly")
+
+        let handle = client.getLocationsPublisher().sink { result in
+            exp.fulfill()
+        } receiveValue: { result in
+            print("Response: \(result)")
+        }
+
+        wait(for: [exp], timeout: 10.0)
+        handle.cancel()
+    }
+
     static var allTests = [
         ("testLocationLegacyJSON", testLocationLegacyJSON),
         ("testLegacyTimeFormatter", testLegacyTimeFormatter),
