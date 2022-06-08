@@ -10,21 +10,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface SPParkingLocation (Private)
-
--(instancetype) initWithIdentifier:(NSString *)identifier
-                              city:(NSString *)city
-                           zipCode:(NSString *)zipCode
-                            street:(NSString *)street
-                           address:(NSString *)address
-                          location:(CLLocation *)location
-                               URL:(NSURL *)URL
-                              name:(NSString *)name
-                parkingDescription:(NSString * _Nullable)parkingDescription
-                        deafAccess:(BOOL )deafAccess
-                  deficientAccess:(BOOL )deficientAccess
-                       elderAccess:(BOOL )elderAccess
-                  wheelChairAccess:(BOOL )wheelChairAccess
-                       blindAccess:(BOOL) blindAccess;
 /// The reference of the parking on the API
 @property(nonatomic, copy, readwrite) NSString *identifier;
 
@@ -66,6 +51,23 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// Whether or not the location has improved accessibility for non seeing people
 @property(nonatomic, assign, readwrite) BOOL blindAccess;
+
+
+-(instancetype) initWithIdentifier:(NSString *)identifier
+                              city:(NSString *)city
+                           zipCode:(NSString *)zipCode
+                            street:(NSString *)street
+                           address:(NSString *)address
+                          location:(CLLocation *)location
+                               URL:(NSURL *)URL
+                              name:(NSString *)name
+                parkingDescription:(NSString * _Nullable)parkingDescription
+                        deafAccess:(BOOL )deafAccess
+                  deficientAccess:(BOOL )deficientAccess
+                       elderAccess:(BOOL )elderAccess
+                  wheelChairAccess:(BOOL )wheelChairAccess
+                       blindAccess:(BOOL) blindAccess;
+
 @end
 
 NS_ASSUME_NONNULL_END

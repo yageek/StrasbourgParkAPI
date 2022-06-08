@@ -33,7 +33,7 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
     /// Default initializer
     /// - Parameter configuration: The `URLSessionConfiguration` to use. Default to `URLSession.default`
     /// - Parameter pageSize: The pagination value to use. Default to `10`.
-    public init(configuration: URLSessionConfiguration = .default, pageSize: UInt = 10) {
+    @objc public init(configuration: URLSessionConfiguration = .default, pageSize: UInt = 10) {
         let queue = OperationQueue()
         queue.qualityOfService = .background
         queue.name = "net.yageek.strasbourgpark.apiclient"
@@ -68,7 +68,7 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
     @discardableResult
     @objc public func getLocations(completion: @escaping([SPParkingLocation]?, Error?) -> Void) -> CancelableRequest {
      
-        let op = DownloadOperation(session: self.session, endpoint: .legacyLocation) { (result: Result<[LocationOpenData], ParkingAPIClientError>) in
+        let op = DownloadAllPages<LocationOpenData>(session: self.session, endpoint: .location, pageSize: self.pageSize) { (result: Result<[LocationOpenData], ParkingAPIClientError>) in
             
             switch result {
             case .success(let value):
@@ -81,6 +81,7 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         workingQueue.addOperation(op)
         return op
     }
+
     /// Retrieve the parkings' status with the open data API
     /// - Parameter completion: The result when the request completed
     /// - Returns: A `CancelableRequest` compatible element

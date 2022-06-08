@@ -10,7 +10,6 @@ import Foundation
 import CoreLocation
 import StrasbourgParkAPIObjc
 import StrasbourgParkAPIObjcPrivate
-import XCTest
 
 @propertyWrapper struct FailableDecodable<T: Decodable>: Decodable {
     let wrappedValue: T?
