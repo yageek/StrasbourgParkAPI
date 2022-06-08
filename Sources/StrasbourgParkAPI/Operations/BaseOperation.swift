@@ -51,7 +51,7 @@ class BaseOperation: Operation {
 }
 
 /// A protocol representing something that can be cancelled
-public protocol CancelableRequest {
+@objc public protocol CancelableRequest {
     /// Cancel the current request
     func cancel()
 }

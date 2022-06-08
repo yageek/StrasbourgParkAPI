@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import StrasbourgParkAPIObjc
 
 /// The returned error type
 public enum ParkingAPIClientError: Error {
@@ -60,7 +61,24 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         #endif
     }
 
-    // MARK: - Callback closures APIs(OBJC)    
+    // MARK: - Callback closures APIs(OBJC)
+    @discardableResult
+    @objc public func getLegacyLocation(completion: @escaping(SPParkingResponse<SPParkingLocation>?, Error?) -> Void) -> CancelableRequest {
+     
+        let op = DownloadOperation(session: self.session, endpoint: .legacyLocation, completion: { (result: Result<LocationResponse, ParkingAPIClientError>) in
+            
+            switch result {
+            case .success(let value):
+
+                
+                completion(value, nil)
+            case .failure(let failure):
+                completion(nil, failure)
+            }
+        })
+        workingQueue.addOperation(op)
+        return op
+    }
     // MARK: - Callback closures APIs
     /// Retrieve the parkings' locations with the legacy API
     /// - Parameter completion: The result when the request completed
