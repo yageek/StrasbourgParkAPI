@@ -57,7 +57,7 @@ struct OpenDataResponse<T: Decodable>: Decodable {
             case count = "rows"
             case start = "start"
         }
-
+        ///:nodoc:
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: Keys.self)
 
@@ -76,7 +76,7 @@ struct OpenDataResponse<T: Decodable>: Decodable {
         case records = "records"
         case parameters = "parameters"
     }
-
+    
     init(from decoder: Decoder) throws {
 
         let container = try decoder.container(keyedBy: Keys.self)
@@ -97,37 +97,42 @@ struct OpenDataResponse<T: Decodable>: Decodable {
 /// The location of the parking
 public struct LocationOpenData: Decodable {
 
-    ///:nodoc:
+    /// The reference of the parking on the API
     public let id: String
-    ///:nodoc:
+    /// The city where the parking is located
     public let city: String
-    ///:nodoc:
+    /// The zip code of the city where the parking is located
     public let zipCode: String
-    ///:nodoc:
+    /// The street part of the address of the parking
     public let street: String
-    ///:nodoc:
+    /// The complete address of the parking location
     public let address: String
-    ///:nodoc:
+    
+    /// The location of the parking on a map
     public let location: CLLocation
 
-    ///:nodoc:
+    /// The URL of the web page provided by the Strasbourg server
     public let url: URL
-    ///:nodoc:
+    
+    /// The name of the parking:
     public let name: String
-    ///:nodoc:
+    
+    /// The description of the parking
     public let description: String?
-
-    ///:nodoc:
+    /// Whether or not the location has improved accessibility for non hearing people
     public let deafAccess: Bool
-    ///:nodoc:
+    
+    /// Whether or not the location has improved accessibility for people suffering from deficiency
     public let deficientAccess: Bool
-    ///:nodoc:
+    
+    /// Whether or not the location has improved accessibility for elder people
     public let elderAccess: Bool
-    ///:nodoc:
+    
+    /// Whether or not the location has improved accessibility for people using a wheel chair
     public let wheelChairAccess: Bool
-    ///:nodoc:
+    
+    /// Whether or not the location has improved accessibility for non seeing people
     public let blindAccess: Bool
-
     private enum DecodingError: Error {
         case invalidCoordinate([Double])
         case invalidURL(String)
@@ -152,7 +157,7 @@ public struct LocationOpenData: Decodable {
 
         case description = "description"
     }
-
+    ///:nodoc:
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: Keys.self)
 
@@ -222,19 +227,19 @@ public enum Either<L, R>: Decodable where L: Decodable, R: Decodable {
 /// The status of the parking
 public struct StatusOpenData: Decodable {
 
-    ///:nodoc:
+    /// The reference of the resource on the server
     public let id: String
-    ///:nodoc:
+    /// The name of the parking
     public let name: String
-    ///:nodoc:
+    /// The state of the parking
     public let etat: Int
-    ///:nodoc:
+    /// The total of available free slots
     public let free: UInt
-    ///:nodoc:
+    /// The total capacity of the parking
     public let total: UInt
-    ///:nodoc:
+    /// Some description on the parking
     public let description: String
-    ///:nodoc:
+    /// Some information available to the users
     public let usersInfo: Either<String, Int>?
 
     private enum Keys: String, CodingKey {
@@ -247,6 +252,7 @@ public struct StatusOpenData: Decodable {
         case usersInfo = "infousager"
     }
 
+    ///:nodoc:
     public init(from decoder: Decoder) throws {
 
         let container = try decoder.container(keyedBy: Keys.self)

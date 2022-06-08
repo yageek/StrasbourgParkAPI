@@ -1,6 +1,6 @@
 # StrasbourgParkAPI
 
-A simple swift package giving access to the strasbourg park open api.
+A simple swift package giving access to the Strasbourg open data for parking ([location API](https://data.strasbourg.eu/explore/dataset/parkings/table/) and [availability API](https://data.strasbourg.eu/explore/dataset/occupation-parkings-temps-reel/table/))
 
 Reference can be found [here](https://yageek.github.io/StrasbourgParkAPI/).
 

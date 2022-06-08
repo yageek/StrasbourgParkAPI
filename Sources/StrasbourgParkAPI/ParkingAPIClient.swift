@@ -10,9 +10,9 @@ import Foundation
 
 /// The returned error type
 public enum ParkingAPIClientError: Error {
-    /// An error due  tp the network
+    /// An error due  to the network network layer
     case network(Error)
-    /// An error due to decoding error
+    /// An error occured while decoding the server response
     case decodable(Error)
     /// An unknown error type
     case generic(Error)

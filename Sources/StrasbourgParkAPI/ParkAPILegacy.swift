@@ -29,7 +29,7 @@ public struct LocationResponse: Decodable {
 
     /// The parking locations
     public let locations: [ParkingLocation]
-
+    ///:nodoc:
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: ContainerKeys.self)
         self.locations = try container.decode([ParkingLocation].self, forKey: .source)
