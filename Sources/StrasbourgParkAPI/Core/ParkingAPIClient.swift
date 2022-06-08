@@ -8,7 +8,7 @@
 
 import Foundation
 import StrasbourgParkAPIObjc
-
+// MARK: - Swift
 /// The returned error type
 public enum ParkingAPIClientError: Error {
     /// An error due  to the network network layer
@@ -62,20 +62,39 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
     }
 
     // MARK: - Callback closures APIs(OBJC)
+    /// Retrieve the parkings' locations with the open data API
+    /// - Parameter completion: The result when the request completed
+    /// - Returns: A `CancelableRequest` compatible element
     @discardableResult
-    @objc public func getLegacyLocation(completion: @escaping(SPParkingResponse<SPParkingLocation>?, Error?) -> Void) -> CancelableRequest {
+    @objc public func getLocations(completion: @escaping([SPParkingLocation]?, Error?) -> Void) -> CancelableRequest {
      
-        let op = DownloadOperation(session: self.session, endpoint: .legacyLocation, completion: { (result: Result<LocationResponse, ParkingAPIClientError>) in
+        let op = DownloadOperation(session: self.session, endpoint: .legacyLocation) { (result: Result<[LocationOpenData], ParkingAPIClientError>) in
             
             switch result {
             case .success(let value):
-
-                
-                completion(value, nil)
+                completion(value as [SPParkingLocation], nil)
             case .failure(let failure):
                 completion(nil, failure)
             }
-        })
+        }
+        
+        workingQueue.addOperation(op)
+        return op
+    }
+    /// Retrieve the parkings' status with the open data API
+    /// - Parameter completion: The result when the request completed
+    /// - Returns: A `CancelableRequest` compatible element
+    @discardableResult
+    @objc public func getStatus(completion: @escaping([SPParkingStatus]?, Error?) -> Void) -> CancelableRequest {
+        let op = DownloadAllPages<StatusOpenData>(session: self.session, endpoint: .status, pageSize: self.pageSize) { (result: Result<[StatusOpenData], ParkingAPIClientError>) in
+            
+            switch result {
+            case .success(let value):
+                completion(value as [SPParkingStatus], nil)
+            case .failure(let error):
+                completion(nil, error)
+            }
+        }
         workingQueue.addOperation(op)
         return op
     }

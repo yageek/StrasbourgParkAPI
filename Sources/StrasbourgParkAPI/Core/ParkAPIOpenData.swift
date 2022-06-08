@@ -10,6 +10,7 @@ import Foundation
 import CoreLocation
 import StrasbourgParkAPIObjc
 import StrasbourgParkAPIObjcPrivate
+import XCTest
 
 @propertyWrapper struct FailableDecodable<T: Decodable>: Decodable {
     let wrappedValue: T?
@@ -98,6 +99,23 @@ struct OpenDataResponse<T: Decodable>: Decodable {
 
 /// The location of the parking
 public struct LocationOpenData: Decodable {
+    fileprivate init(id: String, city: String, zipCode: String, street: String, address: String, location: CLLocation, url: URL, name: String, description: String?, deafAccess: Bool, deficientAccess: Bool, elderAccess: Bool, wheelChairAccess: Bool, blindAccess: Bool) {
+        self.id = id
+        self.city = city
+        self.zipCode = zipCode
+        self.street = street
+        self.address = address
+        self.location = location
+        self.url = url
+        self.name = name
+        self.description = description
+        self.deafAccess = deafAccess
+        self.deficientAccess = deficientAccess
+        self.elderAccess = elderAccess
+        self.wheelChairAccess = wheelChairAccess
+        self.blindAccess = blindAccess
+    }
+    
 
     /// The reference of the parking on the API
     public let id: String
@@ -281,6 +299,59 @@ public struct StatusOpenData: Decodable {
 }
 
 // MARK: - Bridging
+extension LocationOpenData: _ObjectiveCBridgeable {
+    public typealias _ObjectiveCType = SPParkingLocation
+    
+    public func _bridgeToObjectiveC() -> SPParkingLocation {
+        let value = SPParkingLocation(identifier: self.id,
+                                      city: self.city,
+                                      zipCode: self.zipCode,
+                                      street: self.street,
+                                      address: self.address,
+                                      location: self.location,
+                                      url: self.url,
+                                      name: self.name,
+                                      parkingDescription: self.description,
+                                      deafAccess: self.deafAccess,
+                                      deficientAccess: self.deficientAccess,
+                                      elderAccess: self.elderAccess,
+                                      wheelChairAccess: self.wheelChairAccess,
+                                      blindAccess: self.blindAccess)
+        
+        return value
+    }
+    
+    public static func _forceBridgeFromObjectiveC(_ source: SPParkingLocation, result: inout LocationOpenData?) {
+        
+        result = LocationOpenData(id: source.identifier,
+                                  city: source.city,
+                                  zipCode: source.zipCode,
+                                  street: source.street,
+                                  address: source.address,
+                                  location: source.location,
+                                  url: source.url,
+                                  name: source.name,
+                                  description: source.parkingDescription,
+                                  deafAccess: source.deafAccess,
+                                  deficientAccess: source.deficientAccess,
+                                  elderAccess: source.elderAccess,
+                                  wheelChairAccess: source.wheelChairAccess,
+                                  blindAccess: source.blindAccess)
+        
+    }
+    
+    public static func _conditionallyBridgeFromObjectiveC(_ source: SPParkingLocation, result: inout LocationOpenData?) -> Bool {
+        _forceBridgeFromObjectiveC(source, result: &result)
+        return true
+    }
+    
+    public static func _unconditionallyBridgeFromObjectiveC(_ source: SPParkingLocation?) -> LocationOpenData {
+        var result: LocationOpenData!
+        _forceBridgeFromObjectiveC(source!, result: &result)
+        return result!
+    }
+}
+
 extension StatusOpenData: _ObjectiveCBridgeable {
     public func _bridgeToObjectiveC() -> SPParkingStatus {
 
