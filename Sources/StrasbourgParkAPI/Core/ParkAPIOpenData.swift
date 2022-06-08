@@ -8,6 +8,8 @@
 
 import Foundation
 import CoreLocation
+import StrasbourgParkAPIObjc
+import StrasbourgParkAPIObjcPrivate
 
 @propertyWrapper struct FailableDecodable<T: Decodable>: Decodable {
     let wrappedValue: T?
@@ -226,6 +228,16 @@ public enum Either<L, R>: Decodable where L: Decodable, R: Decodable {
 
 /// The status of the parking
 public struct StatusOpenData: Decodable {
+    
+    fileprivate init(id: String, name: String, etat: Int, free: UInt, total: UInt, description: String, usersInfo: Either<String, Int>?) {
+        self.id = id
+        self.name = name
+        self.etat = etat
+        self.free = free
+        self.total = total
+        self.description = description
+        self.usersInfo = usersInfo
+    }
 
     /// The reference of the resource on the server
     public let id: String
@@ -265,4 +277,60 @@ public struct StatusOpenData: Decodable {
         self.etat = try container.decode(Int.self, forKey: .etat)
         self.usersInfo = try container.decodeIfPresent(Either<String, Int>.self, forKey: .usersInfo)
     }
+
+}
+
+// MARK: - Bridging
+extension StatusOpenData: _ObjectiveCBridgeable {
+    public func _bridgeToObjectiveC() -> SPParkingStatus {
+
+        let userInfo: Any?
+        switch self.usersInfo {
+        case .left(let string):
+            userInfo = string as Any
+        case .right(let val):
+            userInfo = val as Any
+        default:
+            userInfo = nil
+        }
+        
+        let value = SPParkingStatus(idenfifier: self.id, name: self.name, etat: self.etat, free: self.free, total: self.total, description: self.description, usersInfo: userInfo)
+        return value
+    }
+    
+    public static func _forceBridgeFromObjectiveC(_ source: SPParkingStatus, result: inout StatusOpenData?) {
+        
+        
+        let usersInfo: Either<String, Int>?
+        switch source.usersInfo {
+        case let x as NSNumber:
+            usersInfo = .right(x.intValue)
+        case let x as String:
+            usersInfo = .left(x)
+        default:
+            usersInfo = nil
+        }
+        
+        result = StatusOpenData(id: source.identifier,
+                                name: source.name,
+                                etat: source.etat,
+                                free: source.free,
+                                total: source.total,
+                                description: source.parkingDescription,
+                                usersInfo: usersInfo)
+    }
+    
+    public static func _conditionallyBridgeFromObjectiveC(_ source: SPParkingStatus, result: inout StatusOpenData?) -> Bool {
+        _forceBridgeFromObjectiveC(source, result: &result)
+        return true
+        
+    }
+    
+    public static func _unconditionallyBridgeFromObjectiveC(_ source: SPParkingStatus?) -> StatusOpenData {
+        var result: StatusOpenData!
+        _forceBridgeFromObjectiveC(source!, result: &result)
+        return result!
+    }
+    
+    public typealias _ObjectiveCType = SPParkingStatus
 }

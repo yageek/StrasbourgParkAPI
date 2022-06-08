@@ -20,6 +20,7 @@ public enum ParkingAPIClientError: Error {
 
 /// An http client to query
 /// data from the server
+@objc(SPParkingAPIClient)
 public final class ParkingAPIClient: NSObject, URLSessionDelegate {
 
     private var session: URLSession!
@@ -59,6 +60,7 @@ public final class ParkingAPIClient: NSObject, URLSessionDelegate {
         #endif
     }
 
+    // MARK: - Callback closures APIs(OBJC)    
     // MARK: - Callback closures APIs
     /// Retrieve the parkings' locations with the legacy API
     /// - Parameter completion: The result when the request completed
