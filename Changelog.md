@@ -1,3 +1,6 @@
+# 4.0.1
+- Update DocC and documentation
+
 # 4.0.0
 - Add Combine API methods
 - Add Swift async methods
